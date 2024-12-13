@@ -5,7 +5,7 @@ use ash::{khr, vk};
 use parking_lot::Mutex;
 
 use std::{
-    borrow::Cow,
+    borrow::{Borrow, Cow},
     collections::{hash_map::Entry, BTreeMap},
     ffi::{CStr, CString},
     mem::MaybeUninit,
@@ -166,11 +166,23 @@ impl super::DeviceShared {
                     .attachments(&vk_attachments)
                     .subpasses(&vk_subpasses);
 
+                let max_multiview_view_count = {
+                    let mut multiview_prop = vk::PhysicalDeviceMultiviewProperties::default();
+                    let mut prop =
+                        vk::PhysicalDeviceProperties2::default().push_next(&mut multiview_prop);
+                    unsafe {
+                        self.instance
+                            .raw_instance()
+                            .get_physical_device_properties2(self.physical_device, &mut prop);
+                    }
+                    multiview_prop.max_multiview_view_count
+                };
+
                 let mut multiview_info;
                 let mask;
                 if let Some(multiview) = e.key().multiview {
                     // Sanity checks, better to panic here than cause a driver crash
-                    assert!(multiview.get() <= 8);
+                    assert!(multiview.get() <= max_multiview_view_count);
                     assert!(multiview.get() > 1);
 
                     // Right now we enable all bits on the view masks and correlation masks.
