@@ -188,7 +188,7 @@ impl super::DeviceShared {
                     // Right now we enable all bits on the view masks and correlation masks.
                     // This means we're rendering to all views in the subpass, and that all views
                     // can be rendered concurrently.
-                    mask = [(1 << multiview.get()) - 1];
+                    mask = [((1u64 << multiview.get()) - 1) as u32];
 
                     // On Vulkan 1.1 or later, this is an alias for core functionality
                     multiview_info = vk::RenderPassMultiviewCreateInfoKHR::default()
